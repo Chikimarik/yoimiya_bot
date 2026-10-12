@@ -1,4 +1,5 @@
 import asyncio
+import html
 from aiogram import Bot, Dispatcher, F, types
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
@@ -14,12 +15,14 @@ ADMIN_ID = 5812615195
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
+# Машина состояний для формы заказа
 class OrderForm(StatesGroup):
     server = State()
     rank = State()
     task = State()
     deadline = State()
 
+# Главное меню
 def main_menu_keyboard():
     buttons = [
         [InlineKeyboardButton(text="📋 Прайс-лист", callback_data="price")],
@@ -28,6 +31,7 @@ def main_menu_keyboard():
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
+# Меню категорий прайса
 def price_keyboard():
     buttons = [
         [InlineKeyboardButton(text="🗺 Карта и квесты", callback_data="price_map")],
@@ -37,11 +41,12 @@ def price_keyboard():
     ]
     return InlineKeyboardMarkup(inline_keyboard=buttons)
 
+# Обработчик /start
 @dp.message(CommandStart())
 async def cmd_start(message: types.Message):
     text = (
         "Привет, путешественник! ✨\n"
-        "Добро пожаловать в **Лавку Наганохары**.\n\n"
+        "Добро пожаловать в <b>Лавку Наганохары</b>.\n\n"
         "Здесь ты можешь заказать ручную прокачку и закрытие контента в Genshin Impact:\n"
         "• Закрытие карты, сбор сундуков и окулусов\n"
         "• Витая Бездна и Театр Воображариума\n"
@@ -49,14 +54,19 @@ async def cmd_start(message: types.Message):
         "Работаем строго без модов и стороннего софта. 🎯\n"
         "Выбери нужный раздел ниже:"
     )
-    await message.answer(text, reply_markup=main_menu_keyboard(), parse_mode="Markdown")
+    await message.answer(text, reply_markup=main_menu_keyboard(), parse_mode="HTML")
 
+# Кнопка возврата в меню
 @dp.callback_query(F.data == "back_main")
 async def back_to_main(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
-    await callback.message.edit_text("Главное меню Лавки Наганохары:", reply_markup=main_menu_keyboard())
+    await callback.message.edit_text(
+        "Главное меню Лавки Наганохары:",
+        reply_markup=main_menu_keyboard()
+    )
     await callback.answer()
 
+# Раздел "Прайс-лист"
 @dp.callback_query(F.data == "price")
 @dp.message(Command("price"))
 async def show_price(event: types.Message | types.CallbackQuery):
@@ -71,7 +81,7 @@ async def show_price(event: types.Message | types.CallbackQuery):
 @dp.callback_query(F.data == "price_map")
 async def price_map(callback: types.CallbackQuery):
     text = (
-        "🗺 **Карта и исследование:**\n\n"
+        "🗺 <b>Карта и исследование:</b>\n\n"
         "• Сбор всех окулусов региона: от 400 ₽\n"
         "• Зачистка зоны на 100% (все сундуки/загадки): от 500 ₽\n"
         "• Длинные цепочки квестов (Араньяка и т.д.): от 600 ₽\n"
@@ -81,13 +91,13 @@ async def price_map(callback: types.CallbackQuery):
         [InlineKeyboardButton(text="📝 Заказать зачистку", callback_data="start_order")],
         [InlineKeyboardButton(text="⬅️ Назад к прайсу", callback_data="price")]
     ])
-    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="Markdown")
+    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
     await callback.answer()
 
 @dp.callback_query(F.data == "price_abyss")
 async def price_abyss(callback: types.CallbackQuery):
     text = (
-        "⚔️ **Боевой контент:**\n\n"
+        "⚔️ <b>Боевой контент:</b>\n\n"
         "• Витая Бездна (9-12 этажи, 36★): от 350 ₽\n"
         "• Только 12 этаж (9★): 250 ₽\n"
         "• Театр Воображариума (макс. уровень): от 300 ₽"
@@ -96,13 +106,13 @@ async def price_abyss(callback: types.CallbackQuery):
         [InlineKeyboardButton(text="📝 Заказать Бездну", callback_data="start_order")],
         [InlineKeyboardButton(text="⬅️ Назад к прайсу", callback_data="price")]
     ])
-    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="Markdown")
+    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
     await callback.answer()
 
 @dp.callback_query(F.data == "price_daily")
 async def price_daily(callback: types.CallbackQuery):
     text = (
-        "⏳ **Ежедневное обслуживание:**\n\n"
+        "⏳ <b>Ежедневное обслуживание:</b>\n\n"
         "• Неделя: Дейлики + слив всей смолы: 350 ₽\n"
         "• Месяц: Полный фарм смолы + дейлики: 1200 ₽\n"
         "• Главный ивент патча целиком: 300–500 ₽"
@@ -111,27 +121,30 @@ async def price_daily(callback: types.CallbackQuery):
         [InlineKeyboardButton(text="📝 Оформить саппорт", callback_data="start_order")],
         [InlineKeyboardButton(text="⬅️ Назад к прайсу", callback_data="price")]
     ])
-    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="Markdown")
+    await callback.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
     await callback.answer()
 
+# Раздел "Гарантии"
 @dp.callback_query(F.data == "guarantees")
 @dp.message(Command("guarantees"))
 async def show_guarantees(event: types.Message | types.CallbackQuery):
     text = (
-        "🛡 **Гарантии и безопасность:**\n\n"
-        "1. **Без читов и стороннего ПО:** Заходим строго через официальный клиент игры.\n"
-        "2. **2FA защита:** Доступ к почте отдавать не нужно! Вход только по коду подтверждения.\n"
-        "3. **Ресурсы в сохранности:** Примогемы, крутки и артефакты не трогаются без вашего ведома.\n"
-        "4. **Отчеты:** Фиксируем скриншотами состояние аккаунта до и после работы."
+        "🛡 <b>Гарантии и безопасность:</b>\n\n"
+        "1. <b>Без читов и стороннего ПО:</b> Заходим строго через официальный клиент игры.\n"
+        "2. <b>2FA защита:</b> Доступ к почте отдавать не нужно! Вход только по коду подтверждения.\n"
+        "3. <b>Ресурсы в сохранности:</b> Примогемы, крутки и артефакты не трогаются без вашего ведома.\n"
+        "4. <b>Отчеты:</b> Фиксируем скриншотами состояние аккаунта до и после работы."
     )
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="⬅️ В меню", callback_data="back_main")]
     ])
     if isinstance(event, types.CallbackQuery):
-        await event.message.edit_text(text, reply_markup=keyboard, parse_mode="Markdown")
+        await event.message.edit_text(text, reply_markup=keyboard, parse_mode="HTML")
         await event.answer()
     else:
-        await event.answer(text, reply_markup=keyboard, parse_mode="Markdown")
+        await event.answer(text, reply_markup=keyboard, parse_mode="HTML")
+
+# ----------------- СЦЕНАРИЙ ЗАКАЗА (FSM) -----------------
 
 @dp.callback_query(F.data == "start_order")
 @dp.message(Command("order"))
@@ -168,20 +181,39 @@ async def process_deadline(message: types.Message, state: FSMContext):
     data = await state.get_data()
     await state.clear()
 
+    # Сообщение клиенту
     await message.answer(
-        "🎆 **Заявка принята!**\nМастер скоро свяжется с тобой.",
+        "🎆 <b>Заявка принята!</b>\nМастер скоро свяжется с тобой в Telegram.",
         reply_markup=main_menu_keyboard(),
-        parse_mode="Markdown"
+        parse_mode="HTML"
     )
 
+    # Формируем и отправляем уведомление админу
     if ADMIN_ID != 0:
-        username = f"@{message.from_user.username}" if message.from_user.username else f"ID: {message.from_user.id}"
+        if message.from_user.username:
+            user_info = f"@{message.from_user.username} (ID: {message.from_user.id})"
+        else:
+            full_name = html.escape(message.from_user.full_name or "Без имени")
+            user_info = f"ID: {message.from_user.id} ({full_name})"
+
         admin_alert = (
-            f"🔔 **НОВЫЙ ЗАКАЗ В ЛАВКЕ!**\n\n"
-            f"👤 Клиент: {username}\n"
-            f"🌐 Сервер: {data.get('server')}\n"
-            f"🎖 Ранг: {data.get('rank')}\n"
-            f"📌 Задача: {data.get('task')}\n"
-            f"⏰ Дедлайн: {data.get('deadline')}"
+            "🔔 <b>НОВЫЙ ЗАКАЗ В ЛАВКЕ!</b>\n\n"
+            f"👤 <b>Клиент:</b> {user_info}\n"
+            f"🌐 <b>Сервер:</b> {html.escape(str(data.get('server')))}\n"
+            f"🎖 <b>Ранг:</b> {html.escape(str(data.get('rank')))}\n"
+            f"📌 <b>Задача:</b> {html.escape(str(data.get('task')))}\n"
+            f"⏰ <b>Дедлайн:</b> {html.escape(str(data.get('deadline')))}"
         )
-        await bot.send_message(chat_id=ADMIN_ID, text
+        try:
+            await bot.send_message(chat_id=ADMIN_ID, text=admin_alert, parse_mode="HTML")
+            print(f">>> Заказ успешно отправлен админу {ADMIN_ID} <<<")
+        except Exception as e:
+            print(f"!!! ОШИБКА ОТПРАВКИ АДМИНУ: {e} !!!")
+
+# ----------------- ТОЧКА ВХОДА -----------------
+async def main():
+    print(">>> БОТ УСПЕШНО ЗАПУЩЕН И ГОТОВ К РАБОТЕ <<<")
+    await dp.start_polling(bot)
+
+if __name__ == "__main__":
+    asyncio.run(main())
