@@ -212,8 +212,29 @@ async def process_deadline(message: types.Message, state: FSMContext):
 
 # ----------------- ТОЧКА ВХОДА -----------------
 async def main():
+    print(">>> Инициализация бота... <<<")
+    # Сбрасываем старые апдейты, чтобы убрать конфликты
+    await bot.delete_webhook(drop_pending_updates=True)
     print(">>> БОТ УСПЕШНО ЗАПУЩЕН И ГОТОВ К РАБОТЕ <<<")
-    await dp.start_polling(bot)
+    
+    # Отправляем тестовое сообщение админу прямо при старте!
+    if ADMIN_ID != 0:
+        try:
+            await bot.send_message(chat_id=ADMIN_ID, text="🚀 <b>Бот успешно запущен на хостинге!</b>", parse_mode="HTML")
+            print(f">>> Тестовое сообщение отправлено админу {ADMIN_ID} <<<")
+        except Exception as e:
+            print(f"!!! ОШИБКА СТАРТОВОГО СООБЩЕНИЯ АДМИНУ: {e} !!!")
+
+    try:
+        await dp.start_polling(bot)
+    finally:
+        await bot.session.close()
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except (KeyboardInterrupt, SystemExit):
+        print(">>> Бот остановлен <<<")
 
 if __name__ == "__main__":
     asyncio.run(main())
