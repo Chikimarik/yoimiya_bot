@@ -1,4 +1,3 @@
-import os
 import asyncio
 from aiogram import Bot, Dispatcher, F, types
 from aiogram.filters import Command, CommandStart
@@ -7,9 +6,10 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-# Хостинг автоматически передает BOT_TOKEN и ADMIN_ID в переменные окружения
-TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
+# ----------------- НАСТРОЙКИ -----------------
+TOKEN = "8888751440:AAECngYJydYR77jLmtBFueSskqTeGOWTQMk"
+ADMIN_ID = 5812615195
+# ---------------------------------------------
 
 bot = Bot(token=TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
@@ -184,10 +184,4 @@ async def process_deadline(message: types.Message, state: FSMContext):
             f"📌 Задача: {data.get('task')}\n"
             f"⏰ Дедлайн: {data.get('deadline')}"
         )
-        await bot.send_message(chat_id=ADMIN_ID, text=admin_alert, parse_mode="Markdown")
-
-async def main():
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+        await bot.send_message(chat_id=ADMIN_ID, text
